@@ -17,16 +17,26 @@ define('SESSION_LIFETIME', 86400); // 24 hours
 // Timezone
 date_default_timezone_set('Europe/Berlin');
 
-// Base URL path for subdirectory installs (auto-detected)
+// Base URL path for subdirectory installs (auto-detected via SCRIPT_NAME)
 // e.g. '' for root install, '/strom' for https://domain.de/strom/
+// Works correctly for scripts at any depth (/, /api/, etc.)
 if (!defined('BASE_PATH')) {
-    $__appRoot = dirname(__DIR__);
-    $__docRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/');
-    if ($__docRoot !== '' && strpos($__appRoot, $__docRoot) === 0) {
-        $__bp = str_replace('\\', '/', substr($__appRoot, strlen($__docRoot)));
-        define('BASE_PATH', rtrim($__bp, '/'));
+    // How many directory levels is the current script below the app root?
+    $__appRoot   = str_replace('\\', '/', dirname(__DIR__));
+    $__scriptDir = str_replace('\\', '/', dirname(
+        realpath($_SERVER['SCRIPT_FILENAME'] ?? '') ?: ($_SERVER['SCRIPT_FILENAME'] ?? '')
+    ));
+    if (strpos($__scriptDir, $__appRoot) === 0) {
+        $__rel    = ltrim(substr($__scriptDir, strlen($__appRoot)), '/');
+        $__levels = $__rel === '' ? 0 : (substr_count($__rel, '/') + 1);
     } else {
-        define('BASE_PATH', '');
+        $__levels = 0;
     }
-    unset($__appRoot, $__docRoot, $__bp);
+    // Walk up that many levels from SCRIPT_NAME to find the app URL root
+    $__urlDir = dirname($_SERVER['SCRIPT_NAME'] ?? '/');
+    for ($__i = 0; $__i < $__levels; $__i++) {
+        $__urlDir = dirname($__urlDir);
+    }
+    define('BASE_PATH', $__urlDir === '/' ? '' : rtrim($__urlDir, '/'));
+    unset($__appRoot, $__scriptDir, $__rel, $__levels, $__urlDir, $__i);
 }
