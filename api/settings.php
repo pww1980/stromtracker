@@ -78,6 +78,14 @@ if ($method === 'GET') {
         }
         jsonResponse(['success' => true]);
 
+    } elseif ($action === 'update_contract_month') {
+        $month = (int)($input['contract_start_month'] ?? 0);
+        if ($month < 1 || $month > 12) {
+            jsonResponse(['error' => 'Ungültiger Monat'], 400);
+        }
+        setSetting('contract_start_month', (string)$month);
+        jsonResponse(['success' => true]);
+
     } else {
         jsonResponse(['error' => 'Unbekannte Aktion'], 400);
     }

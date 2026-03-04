@@ -62,6 +62,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // ── Contract start month ─────────────────────────────────────
+  document.getElementById('contractForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const alertBox = document.getElementById('contractAlert');
+    try {
+      await apiCall(BASE_PATH + '/api/settings.php', {
+        method: 'POST',
+        body: {
+          action:               'update_contract_month',
+          contract_start_month: parseInt(document.getElementById('contract_start_month').value),
+        },
+      });
+      showAlert(alertBox, 'Vertragsmonat gespeichert!', 'success');
+      setTimeout(() => location.reload(), 800);
+    } catch (err) {
+      showAlert(alertBox, err.message, 'danger');
+    }
+  });
+
   // ── App title ────────────────────────────────────────────────
   document.getElementById('titleForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();

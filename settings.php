@@ -4,8 +4,11 @@ $activePage = 'settings';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/layout.php';
 
-$prices   = getAllPrices();
-$curPrice = getCurrentPrice();
+$prices            = getAllPrices();
+$curPrice          = getCurrentPrice();
+$contractMonth     = contractStartMonth();
+$monthNames        = ['', 'Januar','Februar','März','April','Mai','Juni',
+                         'Juli','August','September','Oktober','November','Dezember'];
 ?>
 
 <div class="row g-4">
@@ -117,6 +120,30 @@ $curPrice = getCurrentPrice();
             <input type="text" id="app_title" class="form-control"
                    value="<?= htmlspecialchars(getSetting('app_title', 'StromTracker')) ?>">
             <div class="form-text text-muted">Wird im Seitentitel und Navigation angezeigt</div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-save me-1"></i>Speichern
+          </button>
+        </form>
+
+        <hr class="my-3">
+
+        <!-- Contract start month -->
+        <div id="contractAlert" class="d-none mb-3"></div>
+        <form id="contractForm">
+          <div class="mb-3">
+            <label class="form-label">Vertragsstart (Monat)</label>
+            <select id="contract_start_month" class="form-select">
+              <?php for ($m = 1; $m <= 12; $m++): ?>
+              <option value="<?= $m ?>" <?= $m === $contractMonth ? 'selected' : '' ?>>
+                <?= $monthNames[$m] ?>
+                <?= $m === 1 ? '(Kalenderjahr)' : '' ?>
+              </option>
+              <?php endfor; ?>
+            </select>
+            <div class="form-text text-muted">
+              Beginn deiner Vertragslaufzeit, z.B. Februar für Feb–Jan.
+            </div>
           </div>
           <button type="submit" class="btn btn-primary btn-sm">
             <i class="bi bi-save me-1"></i>Speichern

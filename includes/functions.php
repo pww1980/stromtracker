@@ -97,8 +97,10 @@ function getAvailableYears(): array {
 
 // ─── Contract-year helpers ────────────────────────────────────────────────────
 
-/** Month (1–12) the billing/contract year starts. Configurable in config.php. */
+/** Month (1–12) the billing/contract year starts. DB setting takes priority over config.php. */
 function contractStartMonth(): int {
+    $fromDB = getSetting('contract_start_month', '');
+    if ($fromDB !== '') return max(1, min(12, (int)$fromDB));
     return defined('CONTRACT_START_MONTH') ? (int)CONTRACT_START_MONTH : 1;
 }
 
