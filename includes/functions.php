@@ -142,13 +142,19 @@ function calcYearStats(int $year): array {
     $projCosts      = $projConsumed   * $price;
     $projSavings    = $projProduced   * $price;
 
+    $totalYTD       = $consumedYTD + $producedYTD;
+    $autarkieYTD    = $totalYTD > 0 ? round($producedYTD / $totalYTD * 100, 1) : 0.0;
+    $overprodYTD    = $producedYTD > $consumedYTD;
+
     return [
         'year'             => $year,
         'days_elapsed'     => $daysElapsed,
         'price'            => $price,
         'consumed_ytd'     => round($consumedYTD, 2),
         'produced_ytd'     => round($producedYTD, 2),
-        'total_used_ytd'   => round($consumedYTD + $producedYTD, 2),
+        'total_used_ytd'   => round($totalYTD, 2),
+        'autarkie_ytd'     => $autarkieYTD,
+        'overprod_ytd'     => $overprodYTD,
         'daily_consumed'   => round($dailyConsumed, 3),
         'daily_produced'   => round($dailyProduced, 3),
         'daily_total'      => round($dailyTotal, 3),
@@ -225,6 +231,10 @@ function calcMonthStats(int $year, int $month): array {
     }
     $dailyConsumed = $consumed > 0 ? round($consumed / $spanDays, 2) : 0;
 
+    $totalMonth = $consumed + $produced;
+    $autarkie   = $totalMonth > 0 ? round($produced / $totalMonth * 100, 1) : 0.0;
+    $overprod   = $produced > $consumed; // solar exceeded grid draw → likely feed-in
+
     return [
         'year'           => $year,
         'month'          => $month,
@@ -232,10 +242,12 @@ function calcMonthStats(int $year, int $month): array {
         'price'          => $price,
         'consumed'       => round($consumed, 2),
         'produced'       => round($produced, 2),
-        'total_used'     => round($consumed + $produced, 2),
+        'total_used'     => round($totalMonth, 2),
         'costs'          => round($consumed * $price, 2),
         'savings'        => round($produced * $price, 2),
         'daily_consumed' => $dailyConsumed,
+        'autarkie'       => $autarkie,
+        'overprod'       => $overprod,
         'has_data'       => true,
     ];
 }
@@ -283,6 +295,7 @@ function emptyStats(): array {
     return [
         'year' => 0, 'days_elapsed' => 0, 'price' => 0,
         'consumed_ytd' => 0, 'produced_ytd' => 0, 'total_used_ytd' => 0,
+        'autarkie_ytd' => 0.0, 'overprod_ytd' => false,
         'daily_consumed' => 0, 'daily_produced' => 0, 'daily_total' => 0,
         'costs_ytd' => 0, 'savings_ytd' => 0,
         'proj_consumed' => 0, 'proj_produced' => 0,
@@ -296,7 +309,8 @@ function emptyMonthStats(int $year, int $month): array {
         'year' => $year, 'month' => $month,
         'month_name' => monthName($month), 'price' => 0,
         'consumed' => 0, 'produced' => 0, 'total_used' => 0,
-        'costs' => 0, 'savings' => 0, 'daily_consumed' => 0, 'has_data' => false,
+        'costs' => 0, 'savings' => 0, 'daily_consumed' => 0,
+        'autarkie' => 0.0, 'overprod' => false, 'has_data' => false,
     ];
 }
 

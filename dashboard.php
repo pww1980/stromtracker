@@ -112,6 +112,36 @@ $months = calcAllMonthStats($selectedYear);
     </div>
   </div>
 
+  <div class="col-6 col-md-4 col-xl-3">
+    <?php
+    $aq = $stats['autarkie_ytd'];
+    $aqColor = $aq >= 60 ? '#4ade80' : ($aq >= 30 ? '#fbbf24' : '#60a5fa');
+    $aqBg    = $aq >= 60 ? 'rgba(74,222,128,.12)' : ($aq >= 30 ? 'rgba(251,191,36,.12)' : 'rgba(96,165,250,.12)');
+    ?>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:<?= $aqBg ?>;color:<?= $aqColor ?>">
+        <i class="bi bi-house-check"></i>
+      </div>
+      <div class="stat-label">Solar-Autarkie YTD</div>
+      <div class="stat-value fw-num" style="color:<?= $aqColor ?>">
+        <?= $aq > 0 ? fmtNum($aq, 1) . ' %' : '–' ?>
+        <?php if ($stats['overprod_ytd']): ?><i class="bi bi-lightning-charge-fill text-warning ms-1" title="Einspeisung ins Netz" style="font-size:.9rem"></i><?php endif; ?>
+      </div>
+      <div class="stat-sub">
+        <?php if ($stats['overprod_ytd']): ?>
+          Solar &gt; Netzbezug · Einspeisung
+        <?php else: ?>
+          Solar-Anteil am Gesamtverbrauch
+        <?php endif; ?>
+      </div>
+      <?php if ($aq > 0): ?>
+      <div class="mt-2" style="background:rgba(255,255,255,.08);border-radius:4px;height:4px;overflow:hidden">
+        <div style="width:<?= min(100, $aq) ?>%;height:100%;background:<?= $aqColor ?>;border-radius:4px;transition:width .4s"></div>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
 </div>
 
 <!-- ── Projections ──────────────────────────────────────────── -->
@@ -209,6 +239,7 @@ $months = calcAllMonthStats($selectedYear);
           <th class="text-end">Verbrauch (Zähler)</th>
           <th class="text-end">Ø pro Tag</th>
           <th class="text-end">Solar</th>
+          <th class="text-end">Autarkie</th>
           <th class="text-end">Gesamt</th>
           <th class="text-end">Kosten</th>
           <th class="text-end">Ersparnis</th>
@@ -222,11 +253,23 @@ $months = calcAllMonthStats($selectedYear);
           <td class="text-end fw-num"><span class="badge-kwh"><?= fmtNum($m['consumed']) ?> kWh</span></td>
           <td class="text-end fw-num text-muted"><?= $m['daily_consumed'] > 0 ? fmtNum($m['daily_consumed']) . ' kWh' : '–' ?></td>
           <td class="text-end fw-num"><span class="badge-solar"><?= fmtNum($m['produced']) ?> kWh</span></td>
+          <td class="text-end fw-num">
+            <?php if ($m['autarkie'] > 0): ?>
+            <?php
+              $ac = $m['autarkie'];
+              $acCol = $ac >= 60 ? '#4ade80' : ($ac >= 30 ? '#fbbf24' : '#60a5fa');
+            ?>
+            <span style="color:<?= $acCol ?>;font-variant-numeric:tabular-nums"><?= fmtNum($ac, 1) ?> %</span>
+            <?php if ($m['overprod']): ?><i class="bi bi-lightning-charge-fill text-warning ms-1" style="font-size:.75rem" title="Einspeisung ins Netz"></i><?php endif; ?>
+            <?php else: ?>
+            <span class="text-muted">–</span>
+            <?php endif; ?>
+          </td>
           <td class="text-end fw-num"><?= fmtNum($m['total_used']) ?> kWh</td>
           <td class="text-end fw-num text-red"><?= fmtEur($m['costs']) ?></td>
           <td class="text-end fw-num text-green"><?= fmtEur($m['savings']) ?></td>
           <?php else: ?>
-          <td colspan="6" class="no-data text-center">Keine Daten</td>
+          <td colspan="7" class="no-data text-center">Keine Daten</td>
           <?php endif; ?>
         </tr>
         <?php endforeach; ?>
@@ -241,12 +284,23 @@ $months = calcAllMonthStats($selectedYear);
         $avgDaily        = count($withDaily) > 0
             ? array_sum(array_column($withDaily, 'daily_consumed')) / count($withDaily)
             : 0;
+        $totAQ           = ($totConsumed + $totProduced) > 0
+            ? round($totProduced / ($totConsumed + $totProduced) * 100, 1)
+            : 0.0;
+        $totOverprod     = $totProduced > $totConsumed;
+        $totAQColor      = $totAQ >= 60 ? '#4ade80' : ($totAQ >= 30 ? '#fbbf24' : '#60a5fa');
         ?>
         <tr style="border-top:2px solid var(--border-col);background:rgba(255,255,255,.03)">
           <td class="fw-bold">Gesamt</td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totConsumed) ?> kWh</td>
           <td class="text-end fw-num text-muted"><?= $avgDaily > 0 ? '⌀ ' . fmtNum($avgDaily) . ' kWh' : '–' ?></td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totProduced) ?> kWh</td>
+          <td class="text-end fw-bold fw-num">
+            <?php if ($totAQ > 0): ?>
+            <span style="color:<?= $totAQColor ?>"><?= fmtNum($totAQ, 1) ?> %</span>
+            <?php if ($totOverprod): ?><i class="bi bi-lightning-charge-fill text-warning ms-1" style="font-size:.75rem"></i><?php endif; ?>
+            <?php else: ?>–<?php endif; ?>
+          </td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totConsumed + $totProduced) ?> kWh</td>
           <td class="text-end fw-bold fw-num text-red"><?= fmtEur($totCosts) ?></td>
           <td class="text-end fw-bold fw-num text-green"><?= fmtEur($totSavings) ?></td>
