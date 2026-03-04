@@ -188,16 +188,26 @@ function calcMonthStats(int $year, int $month): array {
         return emptyMonthStats($year, $month);
     }
 
-    // Meter consumption for the month
-    $meterStart = $startReading ? (float)$startReading['meter_reading'] : (float)$endReading['meter_reading'];
+    // Meter start: last reading before month, or first reading OF the month if none exists before
+    if ($startReading) {
+        $startForCalc = $startReading;
+    } else {
+        // No reading before this month – use the first reading within the month
+        $stmt = getDB()->prepare(
+            "SELECT * FROM readings WHERE entry_date >= ? AND entry_date <= ? ORDER BY entry_date ASC LIMIT 1"
+        );
+        $stmt->execute([$monthStart, $monthEnd]);
+        $startForCalc = $stmt->fetch() ?: null;
+    }
+    $meterStart = $startForCalc ? (float)$startForCalc['meter_reading'] : (float)$endReading['meter_reading'];
     $meterEnd   = (float)$endReading['meter_reading'];
     $consumed   = max(0, $meterEnd - $meterStart);
 
     // Produced for this month: difference in ytd values
     // But ytd resets at year start, so only valid within same year
     $producedStart = 0;
-    if ($startReading && (int)date('Y', strtotime($startReading['entry_date'])) === $year) {
-        $producedStart = (float)$startReading['produced_ytd'];
+    if ($startForCalc && (int)date('Y', strtotime($startForCalc['entry_date'])) === $year) {
+        $producedStart = (float)$startForCalc['produced_ytd'];
     }
     // If endReading is not in this year, produced = 0
     $producedEnd = ((int)date('Y', strtotime($endReading['entry_date'])) === $year)
