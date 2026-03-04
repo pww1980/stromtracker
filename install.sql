@@ -1,8 +1,11 @@
 -- StromTracker Database Schema
--- Run this SQL to set up the database
+-- Diese Datei wird von setup.php ausgeführt.
+-- CREATE DATABASE und USE werden dort dynamisch mit dem konfigurierten
+-- DB_NAME aus includes/config.php erzeugt – nicht aus dieser Datei.
+-- Beim manuellen Ausführen: Datenbankname anpassen und USE-Zeile einfügen.
 
-CREATE DATABASE IF NOT EXISTS stromtracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE stromtracker;
+-- CREATE DATABASE IF NOT EXISTS `stromtracker` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE `stromtracker`;
 
 -- Settings table (key/value store)
 CREATE TABLE IF NOT EXISTS settings (

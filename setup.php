@@ -30,11 +30,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step !== 'done') {
 
     if ($action === 'install') {
         try {
+            // Create database using configured DB_NAME (not the hardcoded name in SQL file)
+            $db->exec(
+                "CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "`
+                 CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+            );
+            $db->exec("USE `" . DB_NAME . "`");
+
             $sql = file_get_contents(__DIR__ . '/install.sql');
-            // Split by ; and execute each statement
+            // Split by ; and execute each statement,
+            // skip CREATE DATABASE and USE lines (handled above with DB_NAME)
             $statements = array_filter(
                 array_map('trim', explode(';', $sql)),
-                fn($s) => !empty($s) && !preg_match('/^--/', $s)
+                function (string $s): bool {
+                    if (empty($s)) return false;
+                    // Skip comment-only blocks and the DB-level statements
+                    $first = strtoupper(preg_replace('/\s+/', ' ', $s));
+                    if (str_starts_with($first, '--'))            return false;
+                    if (str_starts_with($first, 'CREATE DATABASE')) return false;
+                    if (str_starts_with($first, 'USE '))           return false;
+                    return true;
+                }
             );
             foreach ($statements as $stmt) {
                 if (trim($stmt)) {
