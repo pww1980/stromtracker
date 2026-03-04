@@ -95,6 +95,93 @@ function getAvailableYears(): array {
     return array_column($stmt->fetchAll(), 'yr');
 }
 
+// ─── Contract-year helpers ────────────────────────────────────────────────────
+
+/** Month (1–12) the billing/contract year starts. Configurable in config.php. */
+function contractStartMonth(): int {
+    return defined('CONTRACT_START_MONTH') ? (int)CONTRACT_START_MONTH : 1;
+}
+
+/**
+ * Return the label and date range for a given contract year.
+ *
+ * With CONTRACT_START_MONTH=2, contractYear 2025 covers 2025-02-01 – 2026-01-31
+ * and has label "2025/26".  With start=1 it equals the calendar year.
+ */
+function getContractPeriod(int $contractYear): array {
+    $sm    = contractStartMonth();
+    $start = new DateTime(sprintf('%04d-%02d-01', $contractYear, $sm));
+    $end   = (clone $start)->modify('+12 months')->modify('-1 day');
+    $label = ($sm === 1)
+        ? (string)$contractYear
+        : $contractYear . '/' . substr((string)($contractYear + 1), -2);
+    return [
+        'start'      => $start,
+        'end'        => $end,
+        'label'      => $label,
+        'days_total' => (int)$start->diff($end)->days + 1,
+    ];
+}
+
+/** Contract year that contains today. */
+function getCurrentContractYear(): int {
+    $sm = contractStartMonth();
+    $m  = (int)date('n');
+    $y  = (int)date('Y');
+    return ($m >= $sm) ? $y : $y - 1;
+}
+
+function getReadingsForPeriod(string $from, string $to): array {
+    $stmt = getDB()->prepare(
+        "SELECT * FROM readings
+         WHERE entry_date >= ? AND entry_date <= ?
+         ORDER BY entry_date ASC"
+    );
+    $stmt->execute([$from, $to]);
+    return $stmt->fetchAll();
+}
+
+function getLastReadingBefore(string $date): ?array {
+    $stmt = getDB()->prepare(
+        "SELECT * FROM readings
+         WHERE entry_date < ?
+         ORDER BY entry_date DESC LIMIT 1"
+    );
+    $stmt->execute([$date]);
+    return $stmt->fetch() ?: null;
+}
+
+/** Available contract years derived from the min/max reading dates. */
+function getAvailableContractYears(): array {
+    $sm = contractStartMonth();
+    if ($sm === 1) return getAvailableYears();
+
+    $stmt = getDB()->query(
+        "SELECT MIN(entry_date) AS min_d, MAX(entry_date) AS max_d FROM readings"
+    );
+    $row = $stmt->fetch();
+    if (!$row || !$row['min_d']) return [];
+
+    $minDate  = new DateTime($row['min_d']);
+    $maxDate  = new DateTime($row['max_d']);
+
+    // Contract year that contains $minDate
+    $minY  = (int)$minDate->format('Y');
+    $minM  = (int)$minDate->format('n');
+    $first = ($minM >= $sm) ? $minY : $minY - 1;
+
+    // Contract year that contains $maxDate
+    $maxY = (int)$maxDate->format('Y');
+    $maxM = (int)$maxDate->format('n');
+    $last = ($maxM >= $sm) ? $maxY : $maxY - 1;
+
+    $years = [];
+    for ($cy = $last; $cy >= $first; $cy--) {
+        $years[] = $cy;
+    }
+    return $years;
+}
+
 // ─── Statistics calculation ───────────────────────────────────────────────────
 
 function calcYearStats(int $year): array {
@@ -260,6 +347,117 @@ function calcAllMonthStats(int $year): array {
 
     for ($m = 1; $m <= $maxMonth; $m++) {
         $months[] = calcMonthStats($year, $m);
+    }
+    return $months;
+}
+
+/**
+ * Like calcYearStats but respects the configured contract period.
+ * produced_ytd resets each calendar year, so we sum across the year boundary.
+ */
+function calcContractStats(int $contractYear): array {
+    $period = getContractPeriod($contractYear);
+    $from   = $period['start']->format('Y-m-d');
+    $to     = $period['end']->format('Y-m-d');
+
+    $now             = new DateTime();
+    $isCurrentPeriod = ($now >= $period['start'] && $now <= $period['end']);
+    $refDate         = $isCurrentPeriod ? $now : $period['end'];
+    $effectiveTo     = min($refDate->format('Y-m-d'), $to);
+
+    $readings = getReadingsForPeriod($from, $effectiveTo);
+    if (empty($readings)) return emptyStats();
+
+    $daysElapsed  = (int)$period['start']->diff($refDate)->days + 1;
+    $prevReading  = getLastReadingBefore($from);
+    $firstReading = $readings[0];
+    $lastReading  = end($readings);
+
+    // Meter reading is absolute (never resets)
+    $meterStart  = $prevReading
+        ? (float)$prevReading['meter_reading']
+        : (float)$firstReading['meter_reading'];
+    $meterEnd    = (float)$lastReading['meter_reading'];
+    $consumedYTD = max(0, $meterEnd - $meterStart);
+
+    // produced_ytd resets on Jan 1 each calendar year
+    $sm = contractStartMonth();
+    if ($sm === 1) {
+        $baseline    = $prevReading ? (float)$prevReading['produced_ytd'] : 0.0;
+        $producedYTD = max(0, (float)$lastReading['produced_ytd'] - $baseline);
+    } else {
+        // Contract spans two calendar years: sum each year's portion separately
+        $startYear = (int)$period['start']->format('Y');
+        $endYear   = (int)$period['end']->format('Y');
+
+        // Year-1 portion: contractStart → Dec 31 of startYear
+        $baseline1   = $prevReading ? (float)$prevReading['produced_ytd'] : 0.0;
+        $lastOfYear1 = null;
+        foreach ($readings as $r) {
+            if ((int)substr($r['entry_date'], 0, 4) === $startYear) {
+                $lastOfYear1 = $r;
+            }
+        }
+        $solar1 = $lastOfYear1
+            ? max(0, (float)$lastOfYear1['produced_ytd'] - $baseline1)
+            : 0.0;
+
+        // Year-2 portion: Jan 1 of endYear → contractEnd (ytd resets to 0 on Jan 1)
+        $solar2 = 0.0;
+        foreach ($readings as $r) {
+            if ((int)substr($r['entry_date'], 0, 4) === $endYear) {
+                $solar2 = (float)$r['produced_ytd'];
+            }
+        }
+
+        $producedYTD = $solar1 + $solar2;
+    }
+
+    $price         = getPriceForDate($lastReading['entry_date']);
+    $dailyConsumed = $daysElapsed > 0 ? $consumedYTD  / $daysElapsed : 0;
+    $dailyProduced = $daysElapsed > 0 ? $producedYTD  / $daysElapsed : 0;
+    $dailyTotal    = $dailyConsumed + $dailyProduced;
+    $costsYTD      = $consumedYTD  * $price;
+    $savingsYTD    = $producedYTD  * $price;
+    $projConsumed  = $dailyConsumed  * $period['days_total'];
+    $projProduced  = $dailyProduced  * $period['days_total'];
+    $totalYTD      = $consumedYTD + $producedYTD;
+    $autarkie      = $totalYTD > 0 ? round($producedYTD / $totalYTD * 100, 1) : 0.0;
+
+    return [
+        'year'           => $contractYear,
+        'period_label'   => $period['label'],
+        'days_elapsed'   => $daysElapsed,
+        'price'          => $price,
+        'consumed_ytd'   => round($consumedYTD, 2),
+        'produced_ytd'   => round($producedYTD, 2),
+        'total_used_ytd' => round($totalYTD, 2),
+        'autarkie_ytd'   => $autarkie,
+        'overprod_ytd'   => $producedYTD > $consumedYTD,
+        'daily_consumed' => round($dailyConsumed, 3),
+        'daily_produced' => round($dailyProduced, 3),
+        'daily_total'    => round($dailyTotal, 3),
+        'costs_ytd'      => round($costsYTD, 2),
+        'savings_ytd'    => round($savingsYTD, 2),
+        'proj_consumed'  => round($projConsumed, 0),
+        'proj_produced'  => round($projProduced, 0),
+        'proj_costs'     => round($projConsumed * $price, 2),
+        'proj_savings'   => round($projProduced * $price, 2),
+        'meter_start'    => round($meterStart, 2),
+        'meter_end'      => round($meterEnd, 2),
+    ];
+}
+
+/** Months of a contract period in contract order (e.g. Feb … Jan). */
+function calcAllContractMonthStats(int $contractYear): array {
+    $period = getContractPeriod($contractYear);
+    $now    = new DateTime();
+    $months = [];
+    $cur    = clone $period['start'];
+
+    while ($cur <= $period['end'] && $cur <= $now) {
+        $months[] = calcMonthStats((int)$cur->format('Y'), (int)$cur->format('n'));
+        $cur->modify('+1 month');
     }
     return $months;
 }

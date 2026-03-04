@@ -9,6 +9,12 @@ define('DB_USER', getenv('DB_USER') ?: 'root');
 define('DB_PASS', getenv('DB_PASS') ?: '');
 define('DB_CHARSET', 'utf8mb4');
 
+// Contract / billing period settings
+// Set to the month number (1-12) when your electricity contract year starts.
+// 1  = January  (standard calendar year)
+// 2  = February (Feb–Jan, typical for many German contracts)
+define('CONTRACT_START_MONTH', 2);
+
 // App settings
 define('APP_VERSION', '1.0.0');
 define('SESSION_NAME', 'stromtracker_session');

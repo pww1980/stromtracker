@@ -4,15 +4,16 @@ $activePage = 'dashboard';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/layout.php';
 
-$currentYear  = (int)date('Y');
-$availYears   = getAvailableYears();
-if (empty($availYears)) $availYears = [$currentYear];
-$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentYear;
+$currentContractYear = getCurrentContractYear();
+$availYears          = getAvailableContractYears();
+if (empty($availYears)) $availYears = [$currentContractYear];
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentContractYear;
 if (!in_array($selectedYear, $availYears)) $selectedYear = $availYears[0];
 
-$stats    = calcYearStats($selectedYear);
-$months   = calcAllMonthStats($selectedYear);
-$forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['has_data' => false];
+$period   = getContractPeriod($selectedYear);
+$stats    = calcContractStats($selectedYear);
+$months   = calcAllContractMonthStats($selectedYear);
+$forecast = ($selectedYear === $currentContractYear) ? calcCurrentMonthForecast() : ['has_data' => false];
 ?>
 
 <!-- Year tabs -->
@@ -21,7 +22,7 @@ $forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['ha
     <?php foreach ($availYears as $yr): ?>
     <button class="year-tab <?= $yr == $selectedYear ? 'active' : '' ?>"
             data-year="<?= $yr ?>">
-      <?= $yr ?>
+      <?= getContractPeriod($yr)['label'] ?>
     </button>
     <?php endforeach; ?>
   </div>
@@ -33,12 +34,12 @@ $forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['ha
 <?php if ($stats['days_elapsed'] === 0 && $stats['consumed_ytd'] == 0): ?>
 <div class="alert" style="background:rgba(102,126,234,.1);border:1px solid rgba(102,126,234,.3);">
   <i class="bi bi-info-circle me-2 text-accent"></i>
-  Noch keine Daten für <?= $selectedYear ?>. <a href="<?= BASE_PATH ?>/entry.php" class="fw-semibold">Ersten Eintrag anlegen →</a>
+  Noch keine Daten für <?= $period['label'] ?>. <a href="<?= BASE_PATH ?>/entry.php" class="fw-semibold">Ersten Eintrag anlegen →</a>
 </div>
 <?php else: ?>
 
 <!-- ── YTD Stats ────────────────────────────────────────────── -->
-<div class="section-title">Jahresübersicht <?= $selectedYear ?> · <?= $stats['days_elapsed'] ?> Tage</div>
+<div class="section-title">Jahresübersicht <?= $period['label'] ?> · <?= $stats['days_elapsed'] ?> Tage</div>
 <div class="row g-3 mb-4" id="statsGrid">
 
   <div class="col-6 col-md-4 col-xl-3">
@@ -195,7 +196,7 @@ $forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['ha
 <?php endif; ?>
 
 <!-- ── Projections ──────────────────────────────────────────── -->
-<div class="section-title">Hochrechnung auf Gesamtjahr</div>
+<div class="section-title">Hochrechnung auf Gesamtjahr <?= $period['label'] ?></div>
 <div class="row g-3 mb-4">
 
   <div class="col-6 col-md-3">
@@ -241,7 +242,7 @@ $forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['ha
   <div class="col-12 col-xl-8">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center justify-content-between">
-        <span><i class="bi bi-bar-chart-line me-2 text-accent"></i>Monatlicher Verlauf <?= $selectedYear ?></span>
+        <span><i class="bi bi-bar-chart-line me-2 text-accent"></i>Monatlicher Verlauf <?= $period['label'] ?></span>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-outline-secondary" id="toggleChartType">
             <i class="bi bi-bar-chart-fill me-1"></i>Balken
@@ -363,7 +364,11 @@ $forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['ha
 <?php endif; // has data ?>
 
 <?php
-$chartData   = json_encode(getChartDataForYear($selectedYear));
+$chartData   = json_encode([
+    'labels'   => array_column($months, 'month_name'),
+    'consumed' => array_column($months, 'consumed'),
+    'produced' => array_column($months, 'produced'),
+]);
 $donutData   = json_encode([
     'consumed' => $stats['consumed_ytd'],
     'produced' => $stats['produced_ytd'],
