@@ -10,8 +10,9 @@ if (empty($availYears)) $availYears = [$currentYear];
 $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : $currentYear;
 if (!in_array($selectedYear, $availYears)) $selectedYear = $availYears[0];
 
-$stats  = calcYearStats($selectedYear);
-$months = calcAllMonthStats($selectedYear);
+$stats    = calcYearStats($selectedYear);
+$months   = calcAllMonthStats($selectedYear);
+$forecast = ($selectedYear === $currentYear) ? calcCurrentMonthForecast() : ['has_data' => false];
 ?>
 
 <!-- Year tabs -->
@@ -143,6 +144,55 @@ $months = calcAllMonthStats($selectedYear);
   </div>
 
 </div>
+
+<?php if ($forecast['has_data']): ?>
+<!-- ── Current-month forecast ────────────────────────────────── -->
+<div class="section-title">
+  Prognose <?= $forecast['month_name'] ?>
+  <span class="text-muted fw-normal" style="font-size:.8rem">
+    · <?= $forecast['days_elapsed'] ?> von <?= $forecast['days_in_month'] ?> Tagen
+  </span>
+</div>
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-blue">
+      <div class="stat-icon"><i class="bi bi-speedometer2"></i></div>
+      <div class="stat-label">Strom Prognose (Monat)</div>
+      <div class="stat-value fw-num"><?= fmtNum($forecast['forecast_consumed'], 1) ?></div>
+      <div class="stat-sub">kWh · bisher <?= fmtNum($forecast['consumed_so_far'], 1) ?> kWh</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-gold">
+      <div class="stat-icon"><i class="bi bi-sun-fill"></i></div>
+      <div class="stat-label">Solar Prognose (Monat)</div>
+      <div class="stat-value fw-num"><?= fmtNum($forecast['forecast_produced'], 1) ?></div>
+      <div class="stat-sub">kWh · bisher <?= fmtNum($forecast['produced_so_far'], 1) ?> kWh</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-red">
+      <div class="stat-icon"><i class="bi bi-receipt"></i></div>
+      <div class="stat-label">Kosten Prognose (Monat)</div>
+      <div class="stat-value fw-num"><?= fmtEur($forecast['forecast_costs']) ?></div>
+      <div class="stat-sub">@ <?= fmtNum($forecast['price'], 4) ?> €/kWh</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-green">
+      <div class="stat-icon"><i class="bi bi-piggy-bank"></i></div>
+      <div class="stat-label">Ersparnis Prognose (Monat)</div>
+      <div class="stat-value fw-num"><?= fmtEur($forecast['forecast_savings']) ?></div>
+      <div class="stat-sub">€ durch Solar</div>
+    </div>
+  </div>
+
+</div>
+<?php endif; ?>
 
 <!-- ── Projections ──────────────────────────────────────────── -->
 <div class="section-title">Hochrechnung auf Gesamtjahr</div>

@@ -289,6 +289,41 @@ function getMultiYearChartData(): array {
     return $datasets;
 }
 
+function calcCurrentMonthForecast(): array {
+    $now         = new DateTime();
+    $year        = (int)$now->format('Y');
+    $month       = (int)$now->format('n');
+    $dayOfMonth  = (int)$now->format('j');
+    $daysInMonth = (int)$now->format('t');
+
+    if ($dayOfMonth < 2) {
+        return ['has_data' => false]; // zu wenig Daten für sinnvolle Prognose
+    }
+
+    $m = calcMonthStats($year, $month);
+    if (!$m['has_data'] || ($m['consumed'] == 0 && $m['produced'] == 0)) {
+        return ['has_data' => false];
+    }
+
+    $price     = $m['price'];
+    $fConsumed = round($m['consumed'] / $dayOfMonth * $daysInMonth, 1);
+    $fProduced = round($m['produced'] / $dayOfMonth * $daysInMonth, 1);
+
+    return [
+        'has_data'          => true,
+        'month_name'        => monthName($month),
+        'days_in_month'     => $daysInMonth,
+        'days_elapsed'      => $dayOfMonth,
+        'consumed_so_far'   => $m['consumed'],
+        'produced_so_far'   => $m['produced'],
+        'forecast_consumed' => $fConsumed,
+        'forecast_produced' => $fProduced,
+        'forecast_costs'    => round($fConsumed * $price, 2),
+        'forecast_savings'  => round($fProduced * $price, 2),
+        'price'             => $price,
+    ];
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function emptyStats(): array {
