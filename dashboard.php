@@ -14,6 +14,14 @@ $period   = getContractPeriod($selectedYear);
 $stats    = calcContractStats($selectedYear);
 $months   = calcAllContractMonthStats($selectedYear);
 $forecast = ($selectedYear === $currentContractYear) ? calcCurrentMonthForecast() : ['has_data' => false];
+
+// YTD progress for the selected period
+$ytdPct        = $period['days_total'] > 0
+    ? min(100, round($stats['days_elapsed'] / $period['days_total'] * 100, 1))
+    : 0;
+$periodStartFmt = $period['start']->format('d.m.Y');
+$periodEndFmt   = $period['end']->format('d.m.Y');
+$isActivePeriod = ($selectedYear === $currentContractYear);
 ?>
 
 <!-- Year tabs -->
@@ -30,6 +38,42 @@ $forecast = ($selectedYear === $currentContractYear) ? calcCurrentMonthForecast(
     <i class="bi bi-plus-lg me-1"></i>Neuer Eintrag
   </a>
 </div>
+
+<?php if ($stats['days_elapsed'] > 0 || $stats['consumed_ytd'] > 0): ?>
+<!-- ── YTD Progress bar ──────────────────────────────────────── -->
+<div class="card mb-4 px-3 py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <div>
+      <span class="fw-semibold">Vertragsjahr <?= $period['label'] ?></span>
+      <span class="text-muted ms-2 small"><?= $periodStartFmt ?> – <?= $periodEndFmt ?></span>
+    </div>
+    <div class="text-end">
+      <?php if ($isActivePeriod): ?>
+        <span class="badge" style="background:rgba(102,126,234,.15);color:#818cf8">
+          Laufend · Tag <?= $stats['days_elapsed'] ?> von <?= $period['days_total'] ?>
+        </span>
+      <?php else: ?>
+        <span class="badge" style="background:rgba(100,116,139,.15);color:#94a3b8">
+          Abgeschlossen · <?= $period['days_total'] ?> Tage
+        </span>
+      <?php endif; ?>
+      <span class="fw-num ms-2 fw-semibold" style="color:#818cf8"><?= $ytdPct ?> %</span>
+    </div>
+  </div>
+  <div class="progress" style="height:8px;background:rgba(255,255,255,.06);border-radius:4px">
+    <div class="progress-bar" role="progressbar"
+         style="width:<?= $ytdPct ?>%;background:linear-gradient(90deg,#667eea,#764ba2);border-radius:4px"
+         aria-valuenow="<?= $ytdPct ?>" aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+  <div class="d-flex justify-content-between mt-1" style="font-size:.72rem;color:var(--text-muted)">
+    <span><?= $periodStartFmt ?></span>
+    <?php if ($isActivePeriod): ?>
+      <span style="position:relative;left:<?= ($ytdPct - 50) ?>%">Heute</span>
+    <?php endif; ?>
+    <span><?= $periodEndFmt ?></span>
+  </div>
+</div>
+<?php endif; ?>
 
 <?php if ($stats['days_elapsed'] === 0 && $stats['consumed_ytd'] == 0): ?>
 <div class="alert" style="background:rgba(102,126,234,.1);border:1px solid rgba(102,126,234,.3);">
