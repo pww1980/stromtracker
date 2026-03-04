@@ -216,17 +216,27 @@ function calcMonthStats(int $year, int $month): array {
 
     $produced = max(0, $producedEnd - $producedStart);
 
+    // Daily average: span between the two bracketing readings
+    $spanDays      = 1;
+    if ($startForCalc) {
+        $d1       = new DateTime($startForCalc['entry_date']);
+        $d2       = new DateTime($endReading['entry_date']);
+        $spanDays = max(1, (int)$d1->diff($d2)->days);
+    }
+    $dailyConsumed = $consumed > 0 ? round($consumed / $spanDays, 2) : 0;
+
     return [
-        'year'          => $year,
-        'month'         => $month,
-        'month_name'    => monthName($month),
-        'price'         => $price,
-        'consumed'      => round($consumed, 2),
-        'produced'      => round($produced, 2),
-        'total_used'    => round($consumed + $produced, 2),
-        'costs'         => round($consumed * $price, 2),
-        'savings'       => round($produced * $price, 2),
-        'has_data'      => true,
+        'year'           => $year,
+        'month'          => $month,
+        'month_name'     => monthName($month),
+        'price'          => $price,
+        'consumed'       => round($consumed, 2),
+        'produced'       => round($produced, 2),
+        'total_used'     => round($consumed + $produced, 2),
+        'costs'          => round($consumed * $price, 2),
+        'savings'        => round($produced * $price, 2),
+        'daily_consumed' => $dailyConsumed,
+        'has_data'       => true,
     ];
 }
 
@@ -286,7 +296,7 @@ function emptyMonthStats(int $year, int $month): array {
         'year' => $year, 'month' => $month,
         'month_name' => monthName($month), 'price' => 0,
         'consumed' => 0, 'produced' => 0, 'total_used' => 0,
-        'costs' => 0, 'savings' => 0, 'has_data' => false,
+        'costs' => 0, 'savings' => 0, 'daily_consumed' => 0, 'has_data' => false,
     ];
 }
 

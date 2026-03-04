@@ -207,6 +207,7 @@ $months = calcAllMonthStats($selectedYear);
         <tr>
           <th>Monat</th>
           <th class="text-end">Verbrauch (Zähler)</th>
+          <th class="text-end">Ø pro Tag</th>
           <th class="text-end">Solar</th>
           <th class="text-end">Gesamt</th>
           <th class="text-end">Kosten</th>
@@ -219,26 +220,32 @@ $months = calcAllMonthStats($selectedYear);
           <td class="fw-semibold"><?= $m['month_name'] ?></td>
           <?php if ($m['has_data'] && ($m['consumed'] > 0 || $m['produced'] > 0)): ?>
           <td class="text-end fw-num"><span class="badge-kwh"><?= fmtNum($m['consumed']) ?> kWh</span></td>
+          <td class="text-end fw-num text-muted"><?= $m['daily_consumed'] > 0 ? fmtNum($m['daily_consumed']) . ' kWh' : '–' ?></td>
           <td class="text-end fw-num"><span class="badge-solar"><?= fmtNum($m['produced']) ?> kWh</span></td>
           <td class="text-end fw-num"><?= fmtNum($m['total_used']) ?> kWh</td>
           <td class="text-end fw-num text-red"><?= fmtEur($m['costs']) ?></td>
           <td class="text-end fw-num text-green"><?= fmtEur($m['savings']) ?></td>
           <?php else: ?>
-          <td colspan="5" class="no-data text-center">Keine Daten</td>
+          <td colspan="6" class="no-data text-center">Keine Daten</td>
           <?php endif; ?>
         </tr>
         <?php endforeach; ?>
 
         <!-- Totals row -->
         <?php
-        $totConsumed  = array_sum(array_column($months, 'consumed'));
-        $totProduced  = array_sum(array_column($months, 'produced'));
-        $totCosts     = array_sum(array_column($months, 'costs'));
-        $totSavings   = array_sum(array_column($months, 'savings'));
+        $totConsumed     = array_sum(array_column($months, 'consumed'));
+        $totProduced     = array_sum(array_column($months, 'produced'));
+        $totCosts        = array_sum(array_column($months, 'costs'));
+        $totSavings      = array_sum(array_column($months, 'savings'));
+        $withDaily       = array_values(array_filter($months, fn($m) => $m['daily_consumed'] > 0));
+        $avgDaily        = count($withDaily) > 0
+            ? array_sum(array_column($withDaily, 'daily_consumed')) / count($withDaily)
+            : 0;
         ?>
         <tr style="border-top:2px solid var(--border-col);background:rgba(255,255,255,.03)">
           <td class="fw-bold">Gesamt</td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totConsumed) ?> kWh</td>
+          <td class="text-end fw-num text-muted"><?= $avgDaily > 0 ? '⌀ ' . fmtNum($avgDaily) . ' kWh' : '–' ?></td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totProduced) ?> kWh</td>
           <td class="text-end fw-bold fw-num"><?= fmtNum($totConsumed + $totProduced) ?> kWh</td>
           <td class="text-end fw-bold fw-num text-red"><?= fmtEur($totCosts) ?></td>
