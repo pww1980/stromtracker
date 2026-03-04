@@ -7,7 +7,7 @@ function startSecureSession(): void {
         session_name(SESSION_NAME);
         session_set_cookie_params([
             'lifetime' => SESSION_LIFETIME,
-            'path'     => '/',
+            'path'     => (BASE_PATH ?: '/'),
             'secure'   => isset($_SERVER['HTTPS']),
             'httponly' => true,
             'samesite' => 'Lax',
@@ -23,7 +23,7 @@ function isLoggedIn(): bool {
 
 function requireLogin(): void {
     if (!isLoggedIn()) {
-        header('Location: /login.php');
+        header('Location: ' . BASE_PATH . '/login.php');
         exit;
     }
 }

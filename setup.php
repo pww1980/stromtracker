@@ -38,17 +38,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step !== 'done') {
             $db->exec("USE `" . DB_NAME . "`");
 
             $sql = file_get_contents(__DIR__ . '/install.sql');
-            // Split by ; and execute each statement,
-            // skip CREATE DATABASE and USE lines (handled above with DB_NAME)
+            // Split by ; and execute each statement.
+            // Strip leading comment/blank lines from each chunk to get the
+            // actual SQL verb, then skip CREATE DATABASE and USE statements
+            // (those are handled above with the configured DB_NAME).
             $statements = array_filter(
                 array_map('trim', explode(';', $sql)),
                 function (string $s): bool {
-                    if (empty($s)) return false;
-                    // Skip comment-only blocks and the DB-level statements
-                    $first = strtoupper(preg_replace('/\s+/', ' ', $s));
-                    if (str_starts_with($first, '--'))            return false;
-                    if (str_starts_with($first, 'CREATE DATABASE')) return false;
-                    if (str_starts_with($first, 'USE '))           return false;
+                    // Strip leading blank lines and SQL comment lines
+                    $effective = '';
+                    foreach (explode("\n", $s) as $line) {
+                        $t = ltrim($line);
+                        if ($effective === '' && ($t === '' || substr($t, 0, 2) === '--')) {
+                            continue;
+                        }
+                        $effective .= $line . "\n";
+                    }
+                    $effective = trim($effective);
+                    if ($effective === '') return false;
+                    $upper = strtoupper($effective);
+                    if (substr($upper, 0, 15) === 'CREATE DATABASE') return false;
+                    if (substr($upper, 0, 4) === 'USE ')            return false;
                     return true;
                 }
             );
@@ -73,17 +83,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step !== 'done') {
         } elseif ($price <= 0) {
             $error = 'Strompreis muss größer als 0 sein.';
         } else {
-            $hash = password_hash($pw, PASSWORD_BCRYPT);
-            setSetting('password_hash', $hash);
-            // Update or insert initial price
-            $stmt = $db->prepare(
-                "INSERT INTO electricity_prices (valid_from, price_kwh, note)
-                 VALUES (?, ?, 'Initialer Strompreis')
-                 ON DUPLICATE KEY UPDATE price_kwh = VALUES(price_kwh)"
-            );
-            $stmt->execute([date('Y') . '-01-01', $price]);
-            $success = 'Installation erfolgreich! Du kannst dich jetzt anmelden.';
-            $step    = 'done';
+            try {
+                $hash = password_hash($pw, PASSWORD_BCRYPT);
+                setSetting('password_hash', $hash);
+                // Update or insert initial price
+                $pstmt = $db->prepare(
+                    "INSERT INTO electricity_prices (valid_from, price_kwh, note)
+                     VALUES (?, ?, 'Initialer Strompreis')
+                     ON DUPLICATE KEY UPDATE price_kwh = VALUES(price_kwh)"
+                );
+                $pstmt->execute([date('Y') . '-01-01', $price]);
+                $success = 'Installation erfolgreich! Du kannst dich jetzt anmelden.';
+                $step    = 'done';
+            } catch (Exception $e) {
+                $error = 'Fehler beim Speichern: ' . $e->getMessage();
+            }
         }
     }
 }

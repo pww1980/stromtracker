@@ -154,7 +154,7 @@ if ($editId) {
             <span class="spinner-border spinner-border-sm me-2"></span>Speichern…
           </span>
         </button>
-        <a href="/dashboard.php" class="btn btn-outline-secondary px-4">Abbrechen</a>
+        <a href="<?= BASE_PATH ?>/dashboard.php" class="btn btn-outline-secondary px-4">Abbrechen</a>
       </div>
 
     </form>
@@ -169,13 +169,14 @@ $lastMeter = $lastReading ? (float)$lastReading['meter_reading'] : 0;
 $lastDate  = $lastReading ? $lastReading['entry_date'] : '';
 $curPrice  = getCurrentPrice();
 
+$bp = BASE_PATH;
 $extraScripts = <<<HTML
 <script>
 const LAST_METER = $lastMeter;
 const LAST_DATE  = "$lastDate";
 const CUR_PRICE  = $curPrice;
 </script>
-<script src="/assets/js/entry.js"></script>
+<script src="{$bp}/assets/js/entry.js"></script>
 HTML;
 
 require_once __DIR__ . '/includes/layout_end.php';

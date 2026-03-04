@@ -58,11 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      let url    = '/api/entries.php';
+      let url    = BASE_PATH + '/api/entries.php';
       let method = 'POST';
 
       if (editId) {
-        url    = `/api/entries.php?id=${editId}`;
+        url    = BASE_PATH + `/api/entries.php?id=${editId}`;
         method = 'PUT';
       }
 
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(editId ? 'Eintrag aktualisiert!' : 'Eintrag gespeichert!', 'success');
 
       // Redirect to dashboard after brief delay
-      setTimeout(() => { window.location.href = '/dashboard.php'; }, 800);
+      setTimeout(() => { window.location.href = BASE_PATH + '/dashboard.php'; }, 800);
     } catch (err) {
       showAlert(err.message, 'danger');
       setLoading(false);

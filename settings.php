@@ -158,8 +158,7 @@ $curPrice = getCurrentPrice();
 </div>
 
 <?php
-$extraScripts = <<<'HTML'
-<script src="/assets/js/settings.js"></script>
-HTML;
+$bp = BASE_PATH;
+$extraScripts = "<script src=\"{$bp}/assets/js/settings.js\"></script>";
 require_once __DIR__ . '/includes/layout_end.php';
 ?>

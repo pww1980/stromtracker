@@ -24,7 +24,7 @@ $months = calcAllMonthStats($selectedYear);
     </button>
     <?php endforeach; ?>
   </div>
-  <a href="/entry.php" class="btn btn-primary btn-sm">
+  <a href="<?= BASE_PATH ?>/entry.php" class="btn btn-primary btn-sm">
     <i class="bi bi-plus-lg me-1"></i>Neuer Eintrag
   </a>
 </div>
@@ -32,7 +32,7 @@ $months = calcAllMonthStats($selectedYear);
 <?php if ($stats['days_elapsed'] === 0 && $stats['consumed_ytd'] == 0): ?>
 <div class="alert" style="background:rgba(102,126,234,.1);border:1px solid rgba(102,126,234,.3);">
   <i class="bi bi-info-circle me-2 text-accent"></i>
-  Noch keine Daten für <?= $selectedYear ?>. <a href="/entry.php" class="fw-semibold">Ersten Eintrag anlegen →</a>
+  Noch keine Daten für <?= $selectedYear ?>. <a href="<?= BASE_PATH ?>/entry.php" class="fw-semibold">Ersten Eintrag anlegen →</a>
 </div>
 <?php else: ?>
 
@@ -257,8 +257,9 @@ $donutData   = json_encode([
     'consumed' => $stats['consumed_ytd'],
     'produced' => $stats['produced_ytd'],
 ]);
+$bp = BASE_PATH;
 $extraScripts = <<<HTML
-<script src="/assets/js/dashboard.js"></script>
+<script src="{$bp}/assets/js/dashboard.js"></script>
 <script>
   initDashboard($chartData, $donutData, {selectedYear: $selectedYear});
 </script>

@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('confirmDelete')?.addEventListener('click', async () => {
     if (!deleteId) return;
     try {
-      await apiCall(`/api/entries.php?id=${deleteId}`, { method: 'DELETE' });
+      await apiCall(BASE_PATH + `/api/entries.php?id=${deleteId}`, { method: 'DELETE' });
       modal.hide();
       showToast('Eintrag gelöscht', 'success');
       // Remove row from DOM

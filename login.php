@@ -3,15 +3,16 @@ require_once __DIR__ . '/includes/auth.php';
 
 // Redirect if already logged in
 if (isLoggedIn()) {
-    header('Location: /dashboard.php');
+    header('Location: ' . BASE_PATH . '/dashboard.php');
     exit;
 }
 
 // Check if installed
 if (!isInstalled()) {
-    header('Location: /setup.php');
+    header('Location: ' . BASE_PATH . '/setup.php');
     exit;
 }
+$bp = BASE_PATH;
 ?><!DOCTYPE html>
 <html lang="de">
 <head>
@@ -20,7 +21,7 @@ if (!isInstalled()) {
 <title>Anmelden – StromTracker</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="<?= $bp ?>/assets/css/style.css">
 </head>
 <body>
 <div class="login-wrapper">
@@ -59,6 +60,7 @@ if (!isInstalled()) {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const BASE_PATH = <?= json_encode($bp) ?>;
 const form     = document.getElementById('loginForm');
 const pwInput  = document.getElementById('password');
 const alertBox = document.getElementById('alertBox');
@@ -87,14 +89,14 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
 
   try {
-    const res  = await fetch('/api/auth.php', {
+    const res  = await fetch(BASE_PATH + '/api/auth.php', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ action: 'login', password: pwInput.value }),
     });
     const data = await res.json();
     if (data.success) {
-      window.location.href = '/dashboard.php';
+      window.location.href = BASE_PATH + '/dashboard.php';
     } else {
       throw new Error(data.error || 'Falsches Passwort');
     }

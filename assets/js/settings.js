@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const note  = document.getElementById('price_note').value;
 
     try {
-      await apiCall('/api/settings.php', {
+      await apiCall(BASE_PATH + '/api/settings.php', {
         method: 'POST',
         body: { action: 'add_price', valid_from: date, price_kwh: price, note },
       });
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', async () => {
       if (!confirm('Strompreis wirklich löschen?')) return;
       try {
-        await apiCall('/api/settings.php', {
+        await apiCall(BASE_PATH + '/api/settings.php', {
           method: 'POST',
           body: { action: 'delete_price', id: parseInt(btn.dataset.id) },
         });
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const alertBox = document.getElementById('pwAlert');
 
     try {
-      await apiCall('/api/settings.php', {
+      await apiCall(BASE_PATH + '/api/settings.php', {
         method: 'POST',
         body: {
           action:           'change_password',
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const alertBox = document.getElementById('titleAlert');
     try {
-      await apiCall('/api/settings.php', {
+      await apiCall(BASE_PATH + '/api/settings.php', {
         method: 'POST',
         body: {
           action:    'update_title',

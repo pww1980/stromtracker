@@ -17,7 +17,7 @@ $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
             data-year="<?= $yr ?>"><?= $yr ?></button>
     <?php endforeach; ?>
   </div>
-  <a href="/entry.php" class="btn btn-primary btn-sm">
+  <a href="<?= BASE_PATH ?>/entry.php" class="btn btn-primary btn-sm">
     <i class="bi bi-plus-lg me-1"></i>Neuer Eintrag
   </a>
 </div>
@@ -88,7 +88,7 @@ $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
             <?= $r['notes'] ? htmlspecialchars($r['notes']) : '' ?>
           </td>
           <td class="text-end" style="white-space:nowrap">
-            <a href="/entry.php?edit=<?= $r['id'] ?>" class="btn btn-sm btn-outline-secondary me-1" title="Bearbeiten">
+            <a href="<?= BASE_PATH ?>/entry.php?edit=<?= $r['id'] ?>" class="btn btn-sm btn-outline-secondary me-1" title="Bearbeiten">
               <i class="bi bi-pencil"></i>
             </a>
             <button class="btn btn-sm btn-outline-danger delete-btn" data-id="<?= $r['id'] ?>"
@@ -101,7 +101,7 @@ $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
         <?php if (empty($rows)): ?>
         <tr>
           <td colspan="7" class="text-center text-muted py-4">
-            Noch keine Einträge. <a href="/entry.php">Ersten Eintrag anlegen →</a>
+            Noch keine Einträge. <a href="<?= BASE_PATH ?>/entry.php">Ersten Eintrag anlegen →</a>
           </td>
         </tr>
         <?php endif; ?>
@@ -130,8 +130,7 @@ $selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 </div>
 
 <?php
-$extraScripts = <<<'HTML'
-<script src="/assets/js/history.js"></script>
-HTML;
+$bp = BASE_PATH;
+$extraScripts = "<script src=\"{$bp}/assets/js/history.js\"></script>";
 require_once __DIR__ . '/includes/layout_end.php';
 ?>

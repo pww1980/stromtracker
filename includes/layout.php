@@ -8,6 +8,7 @@ require_once __DIR__ . '/db.php';
 requireLogin();
 
 $appTitle = getSetting('app_title', 'StromTracker');
+$bp       = BASE_PATH;
 ?><!DOCTYPE html>
 <html lang="de">
 <head>
@@ -16,7 +17,8 @@ $appTitle = getSetting('app_title', 'StromTracker');
 <title><?= htmlspecialchars(($pageTitle ?? '') . ' – ' . $appTitle) ?></title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="<?= $bp ?>/assets/css/style.css">
+<script>window.BASE_PATH = <?= json_encode($bp) ?>;</script>
 <?= $extraHead ?? '' ?>
 </head>
 <body>
@@ -24,7 +26,7 @@ $appTitle = getSetting('app_title', 'StromTracker');
 <!-- Sidebar -->
 <nav class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <a href="/dashboard.php" class="sidebar-brand">
+    <a href="<?= $bp ?>/dashboard.php" class="sidebar-brand">
       <i class="bi bi-lightning-charge-fill"></i>
       <span><?= htmlspecialchars($appTitle) ?></span>
     </a>
@@ -35,29 +37,29 @@ $appTitle = getSetting('app_title', 'StromTracker');
 
   <ul class="sidebar-nav">
     <li>
-      <a href="/dashboard.php" class="<?= ($activePage ?? '') === 'dashboard' ? 'active' : '' ?>">
+      <a href="<?= $bp ?>/dashboard.php" class="<?= ($activePage ?? '') === 'dashboard' ? 'active' : '' ?>">
         <i class="bi bi-speedometer2"></i><span>Dashboard</span>
       </a>
     </li>
     <li>
-      <a href="/entry.php" class="<?= ($activePage ?? '') === 'entry' ? 'active' : '' ?>">
+      <a href="<?= $bp ?>/entry.php" class="<?= ($activePage ?? '') === 'entry' ? 'active' : '' ?>">
         <i class="bi bi-plus-circle"></i><span>Eingabe</span>
       </a>
     </li>
     <li>
-      <a href="/history.php" class="<?= ($activePage ?? '') === 'history' ? 'active' : '' ?>">
+      <a href="<?= $bp ?>/history.php" class="<?= ($activePage ?? '') === 'history' ? 'active' : '' ?>">
         <i class="bi bi-table"></i><span>Verlauf</span>
       </a>
     </li>
     <li>
-      <a href="/settings.php" class="<?= ($activePage ?? '') === 'settings' ? 'active' : '' ?>">
+      <a href="<?= $bp ?>/settings.php" class="<?= ($activePage ?? '') === 'settings' ? 'active' : '' ?>">
         <i class="bi bi-gear"></i><span>Einstellungen</span>
       </a>
     </li>
   </ul>
 
   <div class="sidebar-footer">
-    <a href="/logout.php" class="sidebar-logout">
+    <a href="<?= $bp ?>/logout.php" class="sidebar-logout">
       <i class="bi bi-box-arrow-right"></i><span>Abmelden</span>
     </a>
   </div>
