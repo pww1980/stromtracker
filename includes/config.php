@@ -26,6 +26,13 @@ date_default_timezone_set('Europe/Berlin');
 // Base URL path for subdirectory installs (auto-detected via SCRIPT_NAME)
 // e.g. '' for root install, '/strom' for https://domain.de/strom/
 // Works correctly for scripts at any depth (/, /api/, etc.)
+// Override via APP_BASE_PATH env var (useful when nginx alias strips the prefix from SCRIPT_NAME)
+if (!defined('BASE_PATH')) {
+    if (($__envPath = getenv('APP_BASE_PATH')) !== false) {
+        define('BASE_PATH', rtrim($__envPath, '/'));
+        unset($__envPath);
+    }
+}
 if (!defined('BASE_PATH')) {
     // How many directory levels is the current script below the app root?
     $__appRoot   = str_replace('\\', '/', dirname(__DIR__));
