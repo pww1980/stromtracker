@@ -28,10 +28,12 @@ date_default_timezone_set('Europe/Berlin');
 // Works correctly for scripts at any depth (/, /api/, etc.)
 // Override via APP_BASE_PATH env var (useful when nginx alias strips the prefix from SCRIPT_NAME)
 if (!defined('BASE_PATH')) {
-    if (($__envPath = getenv('APP_BASE_PATH')) !== false) {
+    // FastCGI params (fastcgi_param in nginx) land in $_SERVER, not in getenv()
+    $__envPath = $_SERVER['APP_BASE_PATH'] ?? getenv('APP_BASE_PATH');
+    if ($__envPath !== false && $__envPath !== null && $__envPath !== '') {
         define('BASE_PATH', rtrim($__envPath, '/'));
-        unset($__envPath);
     }
+    unset($__envPath);
 }
 if (!defined('BASE_PATH')) {
     // How many directory levels is the current script below the app root?
