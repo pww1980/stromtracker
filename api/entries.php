@@ -59,15 +59,8 @@ function handlePost(array $data): void {
     $prodDay     = isset($data['produced_day'])  ? (float)$data['produced_day']  : 0;
     $notes       = trim($data['notes'] ?? '');
 
-    // Validate meter reading is increasing
-    $prev = getDB()->prepare(
-        "SELECT meter_reading FROM readings WHERE entry_date < ? ORDER BY entry_date DESC LIMIT 1"
-    );
-    $prev->execute([$date]);
-    $prevRow = $prev->fetch();
-    if ($prevRow && (float)$prevRow['meter_reading'] > $meter) {
-        jsonResponse(['error' => 'Zählerstand muss höher als der vorherige sein (' . fmtKwh((float)$prevRow['meter_reading']) . ')'], 400);
-    }
+    // Note: meter may legitimately run backwards during solar overproduction (net metering).
+    // No ascending validation – a lower reading than the previous is allowed.
 
     try {
         $stmt = getDB()->prepare(

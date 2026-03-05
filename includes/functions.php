@@ -211,7 +211,7 @@ function calcYearStats(int $year): array {
         : (float)$firstReading['meter_reading'];
 
     $meterEnd     = (float)$lastReading['meter_reading'];
-    $consumedYTD  = max(0, $meterEnd - $meterStart);   // Verbrauch laut Zähler YTD
+    $consumedYTD  = $meterEnd - $meterStart;   // Verbrauch laut Zähler YTD (negativ = Einspeisung)
     $producedYTD  = (float)$lastReading['produced_ytd']; // Solar YTD
 
     $price = getPriceForDate($lastReading['entry_date']);
@@ -296,7 +296,7 @@ function calcMonthStats(int $year, int $month): array {
     }
     $meterStart = $startForCalc ? (float)$startForCalc['meter_reading'] : (float)$endReading['meter_reading'];
     $meterEnd   = (float)$endReading['meter_reading'];
-    $consumed   = max(0, $meterEnd - $meterStart);
+    $consumed   = $meterEnd - $meterStart; // negativ = Einspeisung ins Netz
 
     // Produced for this month: difference in ytd values
     // But ytd resets at year start, so only valid within same year
@@ -380,7 +380,7 @@ function calcContractStats(int $contractYear): array {
         ? (float)$prevReading['meter_reading']
         : (float)$firstReading['meter_reading'];
     $meterEnd    = (float)$lastReading['meter_reading'];
-    $consumedYTD = max(0, $meterEnd - $meterStart);
+    $consumedYTD = $meterEnd - $meterStart; // negativ = Einspeisung ins Netz
 
     // produced_ytd resets on Jan 1 each calendar year
     $sm = contractStartMonth();

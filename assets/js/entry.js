@@ -17,27 +17,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updatePreview() {
     const val = parseFloat(meterInput.value);
-    if (!val || !LAST_METER || val <= LAST_METER) {
+    if (isNaN(val) || !LAST_METER) {
       preview?.classList.add('d-none');
       return;
     }
-    const diff  = val - LAST_METER;
-    const costs = diff * CUR_PRICE;
-
-    document.getElementById('prevConsumed').textContent = fmtKwh(diff);
-    document.getElementById('prevCosts').textContent    = fmtEur(costs);
+    const diff = val - LAST_METER;
+    if (diff > 0) {
+      document.getElementById('prevConsumed').textContent = fmtKwh(diff);
+      document.getElementById('prevCosts').textContent    = fmtEur(diff * CUR_PRICE);
+    } else if (diff < 0) {
+      document.getElementById('prevConsumed').textContent = `${fmtKwh(Math.abs(diff))} Einspeisung`;
+      document.getElementById('prevCosts').textContent    = '—';
+    } else {
+      preview?.classList.add('d-none');
+      return;
+    }
     preview?.classList.remove('d-none');
   }
 
-  // Show meter hint
+  // Show meter hint (informational only – backwards meter is valid during solar overproduction)
   meterInput?.addEventListener('blur', () => {
     const val = parseFloat(meterInput.value);
     const hint = document.getElementById('meterHint');
     if (!hint) return;
     if (LAST_METER && val < LAST_METER && val > 0) {
-      hint.textContent = `⚠ Wert muss größer als ${fmtKwh(LAST_METER)} sein`;
+      hint.innerHTML = `<i class="bi bi-sun-fill me-1" style="color:#fbbf24"></i>Zähler rückwärts – Solarüberschuss / Einspeisung ins Netz`;
       hint.classList.remove('d-none');
-      hint.style.color = '#f87171';
+      hint.style.color = '#fbbf24';
     } else {
       hint.classList.add('d-none');
     }
